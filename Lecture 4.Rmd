@@ -1,0 +1,54 @@
+---
+title: "Lecture 4"
+author: "BR"
+date: "16/01/2020"
+output: html_document
+---
+
+Multicolinear 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#install.packages("stargazer")
+install.packages("estimatr")
+install.packages("huxtable") 
+
+
+library(stargazer)
+library(estimatr)
+library(huxtable)
+
+set.seed(145777)
+
+bigN <- 10000
+
+# Generate X and u
+# X3 perfectly collinear with X1 and X2
+# X4 highly collinear with X1 and X2
+X1 <- runif(bigN, min = 0, max = 10)
+X2 <- rnorm(bigN, mean = 2, sd = 2)
+X3 <- 10 + 5*X1 - 2*X2
+X4 <- X3 + rnorm(bigN, sd = 0.001)
+
+u <- rnorm(bigN, sd = 4)
+
+# Line population regression function
+Y <- 5 + 1.5*X1 + 3*X2 + u
+MyData <- data.frame(X1, X2, X3, X4, Y)
+
+# SUMMARY STATISTICS
+stargazer(MyData, type="text", digits=1)
+
+
+
+# REGRESSION WITH MULTICOLLINEARITY
+model1 <- lm_robust(formula = Y ~ X1 + X2, data = MyData)
+model2 <- lm_robust(formula = Y ~ X1 + X2 + X3, data = MyData)
+model3 <- lm_robust(formula = Y ~ X1 + X2 + X4, data = MyData)
+
+huxreg(model1, model2, model3, error_pos = 'right')
+```
+
