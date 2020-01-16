@@ -1,0 +1,72 @@
+---
+title: "Lecture 3"
+author: "BR"
+date: "14/01/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(ggplot2)
+#set.seed(12345)
+
+bigN=20000
+mean_vector <- rep(0,bigN)
+data_vector <- rbinom(bigN,1,0.5)
+
+for (n in 1:bigN) {
+  values <- sample(data_vector,n)
+  mean_vector[n] <- mean(values)
+} 
+
+n <- seq(1,bigN)
+forgraph <- data.frame(n,data_vector,mean_vector)
+
+
+#ggplot(forgraph , aes(x=n, y=data_vector)) + geom_point(size=2, color="blue") +
+#  labs(x="n", y = "Y") + scale_x_continuous(breaks=c(1,5,10,15,20)) + 
+#  ggthemes::theme_pander(base_size = 14) 
+
+ggplot(forgraph[1:200,] , aes(x=n, y=mean_vector)) + geom_line(size=0.5, color="blue") +
+  geom_hline(yintercept=0.5, size=2, color="red") +
+  labs(x="n", y = "Sample Mean of Y") + 
+  scale_y_continuous(breaks=c(0,0.25,0.5,0.75,1)) + 
+  ggthemes::theme_pander(base_size = 14) 
+```
+
+```{r}
+set.seed(124578)
+
+bigN <- 10000
+
+# Generate X and u
+X <- runif(bigN, min = 0, max = 10)
+u <- rnorm(bigN, sd = 4)
+
+# Line population regression function
+Y <- 5 + 1.5 * X + u
+population_data <- data.frame(X, Y)
+
+betahat_output <- matrix(ncol = 2, nrow = bigN)
+
+for (n in 1:bigN) {
+  sample <- population_data[1:n,]
+  betahat_output[n,] <- lm(Y ~ X, data = sample)$coefficients
+} 
+
+n <- seq(1,bigN)
+beta1hat <- betahat_output[,c(2)]
+forgraph <- data.frame(n , betahat_output[,c(2)])
+head(beta1hat)
+
+ggplot(forgraph , aes(x=n, y=beta1hat)) + geom_line(size=0.5, color="blue") +
+  geom_hline(yintercept=1.5, size=2, color="red") +
+  labs(x="n", y = "Beta1hat") + 
+  #scale_y_continuous(breaks=c(-1,-0.5,0,0.5,1.0,1.5,2.0)) + 
+  ggthemes::theme_pander(base_size = 14) 
+```
+
