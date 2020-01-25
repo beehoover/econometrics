@@ -1,0 +1,85 @@
+---
+title: "HW1"
+author: "BR"
+date: "24/01/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(estimatr)
+library(car)
+
+df<-read.csv("HPRICE2.csv")
+```
+
+```{r}
+df %>%
+  gather(-price, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = price)) +
+    geom_point() +
+    facet_wrap(~ var, scales = "free") +
+    theme_bw()
+```
+
+```{r}
+price_lm<-lm(data = df, formula = price ~ nox + rooms + stratio)
+summary(price_lm)
+
+ 
+plot(price_lm)
+```
+```{r}
+price_rlm<-lm_robust(data = df, formula = price ~ nox + rooms + stratio)
+summary(price_rlm)
+
+int<-price_rlm$coef[1]
+nox<-price_rlm$coef[2]
+room<-price_rlm$coef[3]
+str<-price_rlm$coef[4]
+```
+
+```{r}
+(-2.5)*nox #b
+
+nox/(int+nox) #c
+room/(int+room)
+str/(int+str)
+
+int+nox*6+room*7+str*20#d
+
+# TEST THAT NOX=0, e
+linearHypothesis(price_rlm,c("nox=0"), white.adjust = "hc2")
+
+# TEST THAT NOX=0 & ROOMS=0
+linearHypothesis(price_rlm,c("nox=0", "rooms=0"), white.adjust = "hc2")
+
+# TEST THAT 4*NOX=-ROOMS
+linearHypothesis(price_rlm,c("nox=stratio"), white.adjust = "hc2")
+```
+
+a) An extra room will increase the house price by $6,419
+
+b) Increase house price by $3,827.061 
+
+c) 
+NOx: 12.42192%  
+Room: 31.66241%
+Student Ratio: 9.991189%  
+
+d) $24,433.29
+The buyer got a good deal. 
+
+e) Rejecy Null. test-statistic is -6.915. We can reject the null hypothesis at the 5% interval that the coefficient is not zero. 
+
+f) Reject null. They are no jointly 0.
+
+F-statistic for this joint hypothesis test is about 295.09 and the corresponding p-value is < 2.2e-16. Thus, we can reject the null hypothesis that both coefficients are zero
+
+g) Can't reject the null hypothesis. 
+
+F-statistic for this joint hypothesis test is about 1.5561 and the corresponding p-value is 0.2122. Thus, we cannot reject the null hypothesis that both coefficients are equal. 
