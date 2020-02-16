@@ -2,14 +2,17 @@
 title: "HW1"
 author: "BR"
 date: "24/01/2020"
-output: html_document
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include=FALSE}
 library(tidyverse)
 library(estimatr)
 library(car)
@@ -17,23 +20,8 @@ library(car)
 df<-read.csv("HPRICE2.csv")
 ```
 
-```{r}
-df %>%
-  gather(-price, key = "var", value = "value") %>% 
-  ggplot(aes(x = value, y = price)) +
-    geom_point() +
-    facet_wrap(~ var, scales = "free") +
-    theme_bw()
-```
 
-```{r}
-price_lm<-lm(data = df, formula = price ~ nox + rooms + stratio)
-summary(price_lm)
-
- 
-plot(price_lm)
-```
-```{r}
+```{r, include=FALSE}
 price_rlm<-lm_robust(data = df, formula = price ~ nox + rooms + stratio)
 summary(price_rlm)
 
@@ -41,45 +29,88 @@ int<-price_rlm$coef[1]
 nox<-price_rlm$coef[2]
 room<-price_rlm$coef[3]
 str<-price_rlm$coef[4]
+r_sq<-price_rlm$adj.r.squared
 ```
 
-```{r}
-(-2.5)*nox #b
+```{r, include=FALSE}
+b_nox<-(-2.5)*nox #b
 
 nox/(int+nox) #c
 room/(int+room)
 str/(int+str)
 
-int+nox*6+room*7+str*20#d
+#57.08% (Adjusted R-squared score)
 
-# TEST THAT NOX=0, e
+#NOx: 12.42192%  
+#Room: 31.66241%
+#Student Ratio: 9.991189%  
+
+-(nox/(int+nox))+(room/(int+room))+-(str/(int+str))#not correct c?
+
+#d
+
+d_price<-round(int+nox*6+room*7+str*20, digits = 0)
+
+```
+a) What is the effect of adding an additional room on the house price, holding NOxconcentrations and student-teacher ratio constant?  
+
+  An extra room will increase the house price by $`r round(room, digits = 2)`
+<br><br>
+b) What is the estimated effect on house values of reducing NOx concentrations by 2.5 partsper 100 million?  
+
+  Reducing the NOx concentrations by 2.5 parts per 100 million will increase the value of the house by $`r round(b_nox, digits = 2)`  
+
+<br><br>
+
+c) What percent of the variation in house values is explained by NOx concentrations, number ofrooms, and student-teacher ratio?  
+  
+  `r round((100*r_sq), digits = 2)` %
+
+<br><br>
+
+d) What is the predicted value of a house with NOx concentrations of 6, with 7 rooms, and astudent-teacher ratio of 20? The actual price for that house was $20,000. Did the buyer overpayfor this house?  
+    
+  The predicted value of the house is $`r `. The buyer got a great deal on the house!
+
+```{r, include = FALSE}
+#e
 linearHypothesis(price_rlm,c("nox=0"), white.adjust = "hc2")
 
-# TEST THAT NOX=0 & ROOMS=0
-linearHypothesis(price_rlm,c("nox=0", "rooms=0"), white.adjust = "hc2")
-
-# TEST THAT 4*NOX=-ROOMS
-linearHypothesis(price_rlm,c("nox=stratio"), white.adjust = "hc2")
+e_c<-round(e$Chisq[2], digits = 2)
+e_p<-e$`Pr(>Chisq)`
 ```
 
-a) An extra room will increase the house price by $6,419
+<br><br>
+e) Test the null hypothesis that  
 
-b) Increase house price by $3,827.061 
+  Test-statistic is `r e_c`. We can reject the null hypothesis at the 5% interval that the coefficient is not zero. 
+     
+```{r, include=FALSE}
+# TEST THAT NOX=0 & ROOMS=0
+f<-linearHypothesis(price_rlm,c("nox=0", "rooms=0"), white.adjust = "hc2")
+f_c<-round(f$Chisq[2], digits = 2)
+f_p<-f$`Pr(>Chisq)`
+```
+ <br><br> 
+f) Test the null hypothesis that jointly equal zero.  
 
-c) 
-NOx: 12.42192%  
-Room: 31.66241%
-Student Ratio: 9.991189%  
+  F-statistic for this joint hypothesis test is about `r f_c` and the corresponding p-value is <0.001 . Thus, we can reject the null hypothesis that both coefficients are zero
 
-d) $24,433.29
-The buyer got a good deal. 
 
-e) Rejecy Null. test-statistic is -6.915. We can reject the null hypothesis at the 5% interval that the coefficient is not zero. 
 
-f) Reject null. They are no jointly 0.
 
-F-statistic for this joint hypothesis test is about 295.09 and the corresponding p-value is < 2.2e-16. Thus, we can reject the null hypothesis that both coefficients are zero
+```{r, include=FALSE}
+# TEST THAT 4*NOX=-ROOMS
+g<-linearHypothesis(price_rlm,c("nox=stratio"), white.adjust = "hc2")
+g_c<-round(g$Chisq[2], digits = 2)
+g_p<-g$`Pr(>Chisq)`
+```
 
-g) Can't reject the null hypothesis. 
+<br><br>
+g) Test the null hypothesis that  
 
-F-statistic for this joint hypothesis test is about 1.5561 and the corresponding p-value is 0.2122. Thus, we cannot reject the null hypothesis that both coefficients are equal. 
+  F-statistic for this joint hypothesis test is about `r g_c` and the corresponding p-value is `r g_p`. Thus, we cannot reject the null hypothesis that both coefficients are equal. 
+
+
+
+

@@ -1,0 +1,62 @@
+---
+title: "HW 1"
+author: "BR Hoover"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(estimatr)
+library(car)
+library(magrittr)
+library(texreg)
+
+df<-read.csv("HPRICE2.csv")
+```
+
+```{r q1, echo=FALSE}
+# estimate models
+price_lm <- lm(data = df, formula = price ~ nox + rooms + stratio)
+
+# summary with cluster-robust SEs
+#summary(price_lm, cluster="cluster_id") 
+
+# create table in stargazer
+#stargazer(price_lm)
+
+price_rlm<-lm_robust(data = df, formula = price ~ nox + rooms + stratio)
+
+int<-price_rlm$coef[1]
+nox<-price_rlm$coef[2]
+room<-price_rlm$coef[3]
+str<-price_rlm$coef[4]
+
+table<-texreg(price_lm, include.ci = FALSE)
+```
+
+`r table`
+
+
+(a) What is the effect of adding an additional room on the house price, holding NOx concentrations and student-teacher ratio constant?  
+
+
+ 
+An extraroom will increase the price of the house by $`r room`
+
+(b) What is the estimated effect on house values of reducing NOx concentrations by 2.5 parts per 100 million?  
+
+(c) What percent of the variation in house values is explained by NOx concentrations, number of rooms, and student-teacher ratio?  
+
+(d) What is the predicted value of a house with NOx concentrations of 6, with 7 rooms, and a student-teacher ratio of 20? The actual price for that house was $20,000. Did the buyer overpay for this house?  
+
+(e) Test the null hypothesis that $β_{1}$ equals zero.  
+
+(f) Test the null hypothesis that $β_{1}$ and $β_{3}$ jointly equal zero.  
+
+(g) Test the null hypothesis that $β_{1}$ = $β_{3}$.  
+
