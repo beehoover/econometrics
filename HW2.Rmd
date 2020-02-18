@@ -12,93 +12,67 @@ library(tidyverse)
 library(stargazer)
 library(estimatr)
 library(huxtable)
+library(car)
 
-gpa<- read.csv("GPA20.csv")
+gpa<- read.csv("GPA20.csv") 
 ```
 
+**(a) What are the average SAT score and GPA in the sample?**
 
-
-setwd("C:\\Users\\olivier\\Dropbox\\Econ Desktop\\Teaching\\ESM 246\\Lecture Data")
-savehistory(file="Lecture4.Rhistory")
-
-# IMPORT CSV DATA
-ACS_2018 <- read.csv("ACS_2018.csv")
-
-# SUMMARY STATISTICS
-stargazer(ACS_2018, type="text", digits=1)
 ```{r}
-#(a) What are the average SAT score and GPA in the sample?
-stargazer(gpa, type="text", digits=1)
-
-#colgpa = 2.7
+stargazer(gpa, type="text", digits=5)
 ```
 
+Average SAT Score is 1030.    
+Average GPA is 2.65.  
+
+**(b) Using a regression model, estimate the athlete – non-athlete differential in COLGPA, controlling for SAT.**
+
 ```{r}
-#(b) Using a regression model, estimate the athlete – non-athlete differential in COLGPA, controlling for SAT.
 gpa_lm1 <- lm_robust(formula = colgpa ~ athlete + sat, data=gpa)
 summary(gpa_lm1)
-
-#coefficient for athlete is -0.050615. Being an athlete reduces GPA by 0.05
-```
-```{r}
-#(c) From the regression above, test the null hypothesis that average COLGPA is the same for athlete and non-athlete students. Use a 5% significance level.
-
-#The t-statistic associated with athlete is -1.295. In this case,t= |-1.295|<1.96 = critical value at 5%, which is not statistically significant at the 5% level against a two-sided alternative. 
 ```
 
+When dropping SAT and keeping all else constant, the estimated GPA differential between athletes and non-athletes drops from 0.17 to 0.006, on average. The variables must be independent and exhibit weak multi-collinearity.
+
+**(c) From the regression above, test the null hypothesis that average COLGPA is the same for athlete and non-athlete students. Use a 5% significance level.**
+```{r}
+linearHypothesis(gpa_lm1, c("athlete = 0"))
+```
+
+The t-statistic associated with athlete is -1.295. In this case,t= |-1.295|<1.96 = critical value at 5%, which is not statistically significant at the 5% level against a two-sided alternative.   
+
+**(d) Drop SAT from the model and re-estimate the parameters of the regression model in (b). What is the estimated COLGPA differential between athletes and non-athletes?**
 
 ```{r}
-#(d) Drop SAT from the model and re-estimate the parameters of the regression model in (b).
-#What is the estimated COLGPA differential between athletes and non-athletes?  Explain why the estimate is different than the one in (b).
-
 gpa_lm2<-lm_robust(colgpa ~ athlete, data = gpa)
 summary(gpa_lm2)
-
-#estimated COLGPA differential between athletes and non-athletes is -0.2845 (if you are an athlete). There is a larger difference between athletes and non-athletes when we do not control for SAT. 
-#By dropping SAT, the effects of SAT is being absorbed by ATHLETE. The r-squared has degreased (from 0.167 to 0.008), indicating the model explains less of the variation in COLGPA than when we include SAT. 
 ```
-```{r}
-#(e) Including the SAT, Female, and Athlete variables, re-estimate the model from while allowing the effect of being an athlete to differ for males and females and test the null hypothesis that there is no difference in the GPA of female athletes and non-athletes. Test the same hypothesis for male athletes and non-athletes?
 
-gpa_lm3<- lm_robust(colgpa ~ sat + athlete*female, data = gpa)
+Estimated COLGPA differential between athletes and non-athletes is -0.2845 (if you are an athlete). There is a larger difference between athletes and non-athletes when we do not control for SAT.   
+ 
+
+**Explain why the estimate is different than the one in (b).**  
+
+By dropping SAT, the effects of SAT is being absorbed by ATHLETE. The r-squared has degreased (from 0.167 to 0.008), indicating the model explains less of the variation in COLGPA than when we include SAT.  
+
+**(e) Including the SAT, Female, and Athlete variables, re-estimate the model from while allowing the effect of being an athlete to differ for males and females and test the null hypothesis that there is no difference in the GPA of female athletes and non-athletes.**   
+
+```{r}
+gpa_lm3<- lm_robust(colgpa ~ sat + athlete*(female), data = gpa)
 summary(gpa_lm3)
-
-##The t-statistic associated with athlete is 0.78919. In this case,t= 0.78919<1.96 = critical value at 5%, which is not statistically significant at the 5% level against a two-sided alternative. 
+linearHypothesis(gpa_lm3, c("athlete + athlete:female = 0"), white.adjust="hc2")
 ```
+
+The t-statistic associated with athlete is 0.78919. In this case,t= 0.78919<1.96 = critical value at 5%, which is not statistically significant at the 5% level against a two-sided alternative.  
+
+**Test the same hypothesis for male athletes and non-athletes?**
+
+**(f) Using the estimates of the regression model in (e), calculate the predicted GPA of a female athlete with an SAT of 1,000. Is this above or below the average GPA in the sample?**  
+
 ```{r}
-#(f) Using the estimates of the regression model in (e), calculate the predicted GPA of a female athlete with an SAT of 1,000. Is this above or below the average GPA in the sample?
-
-fmath_predict <- 1000*coef(gpa_lm3)[["sat"]] + 1*coef(gpa_lm3)[["athlete"]] + 1*coef(gpa_lm3)[["female"]] + 1*coef(gpa_lm3)[["athlete:female"]]
-
-#Female athlete with SAT of 1,000 would have a GPA of 2.365348. This is below the average GPA in the sample og 2.7. 
+1000*coef(gpa_lm3)[["sat"]] + 1*coef(gpa_lm3)[["athlete"]] + 1*coef(gpa_lm3)[["female"]] + 1*coef(gpa_lm3)[["athlete:female"]] + 1*coef(gpa_lm3)[[1]]
 ```
-```{r}
-fmath<-gpa %>% 
-  filter(female==1) %>% 
-  filter(athlete==1)
 
-stargazer(fmath, type="text", digits=1)
- ```
+Female athlete with SAT of 1,000 would have a GPA of 2.789516. This is above the average GPA in the sample of 2.7.
 
-# REGRESSIONS
-# 1. FEMALE INDICATOR
-model1 <- lm_robust(formula = log(incwage) ~ (gender==2), data=ACS_2018)
-model2 <- lm_robust(formula = log(incwage) ~ (gender==1), data=ACS_2018)
-huxreg(model1, model2, error_pos = 'right')
-
-# 2. FEMALE INDICATOR, COLLEGE INDICATOR, AND INTERACTION
-model1 <- lm_robust(formula = log(incwage) ~ (gender==2) + (edcat==4) + (gender==2)*(edcat==4), data=ACS_2018)
-summary(model1)
-
-# 2a. FEMALE INDICATOR, EDCAT INDICATORS
-model1 <- lm_robust(formula = log(incwage) ~ (gender==2) + (edcat==2) + (edcat==3) + (edcat==4), data=ACS_2018)
-summary(model1)
-
-# 3. FEMALE INDICATOR, LINEAR EFFECT IN AGE, INTERACTION BETWEEN FEMALE AND AGE
-model1 <- lm_robust(formula = log(incwage) ~ (gender==2) + age , data=ACS_2018)
-model2 <- lm_robust(formula = log(incwage) ~ (gender==2) + age + (gender==2)*age, data=ACS_2018)
-huxreg(model1, model2, error_pos = 'right')
-
-# 4. LOG-LOG REGRESSIONS
-model1 <- lm_robust(formula = log(incwage) ~ log(age) , data=ACS_2018)
-summary(model1)
